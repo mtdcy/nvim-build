@@ -1,11 +1,11 @@
 ---
-name: Build nvim with container
+name: Build nvim with containers
 
 on:
   push:
     paths:
       - build.sh
-      - .github/workflows/build.yml
+      - .github/workflows/build-multi-arch.yml
     branches:
       - main
 
@@ -23,7 +23,9 @@ jobs:
           # for aarch64
           - macos-arm64
         builder:
+          # for *-linux-gnu
           - ubuntu-22.04
+          # for *-linux-musl
           - alpine-3
 
     steps:

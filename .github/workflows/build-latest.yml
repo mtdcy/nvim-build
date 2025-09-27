@@ -1,11 +1,11 @@
 ---
-name: Build nvim with host
+name: Build nvim
 
 on:
   push:
     paths:
       - build.sh
-      - .github/workflows/build-host.yml
+      - .github/workflows/build-latest.yml
     branches:
       - main
 
@@ -17,6 +17,7 @@ jobs:
     strategy:
       matrix:
         runner:
+          # for *-apple-darwin
           - macos-latest
 
     steps:
