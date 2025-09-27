@@ -18,8 +18,10 @@ jobs:
     strategy:
       matrix:
         runner:
-          - macos-latest
+          # for x86_64
           - ubuntu-latest
+          # for aarch64
+          - macos-arm64
         builder:
           - ubuntu-latest
           - alpine-latest
