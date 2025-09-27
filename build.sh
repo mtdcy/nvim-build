@@ -43,6 +43,20 @@ NVIM_ARGS=(
     -DMACOSX_DEPLOYMENT_TARGET=10.13
 )
 
+if ! which cmake >/dev/null; then
+    info "prepare build tools"
+    if which apk; then
+        sudo apk update
+        sudo apk add build-base cmake gettext
+    elif which brew; then
+        brew update
+        brew install cmake gettext
+    else
+        sudo apt update
+        sudo apt install -y build-essential cmake gettext
+    fi
+fi
+
 info "prepare sources"
 
 # prepare sources
