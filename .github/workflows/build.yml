@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - build.sh
+      - .github/workflows/build.yml
     branches:
       - main
 
@@ -26,10 +27,16 @@ jobs:
           fetch-depth: 2
 
       - name: Build
-        run: ./build.sh
+        id: build
+        run: |
+          ./build.sh
+
+          IFS='=' read -r _ version <<< "$(grep NVIM_VERSION build.sh | head -n1)"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Release
         uses: actions/gitea-release-action@v1
         with:
+          tag_name: ${{ steps.build.outputs.version }}
           files: |-
             release/**
