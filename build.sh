@@ -1,7 +1,7 @@
 #!/bin/bash -e
 
 NVIM_VERSION=0.10.4
-NVIM_TAR=neovim-$NVIM_VERSION.tar.gz
+NVIM_TAR="$PWD/neovim-$NVIM_VERSION.tar.gz"
 NVIM_URLS=(
     https://pub.mtdcy.top/packages/neovim-$NVIM_VERSION.tar.gz
     https://github.com/neovim/neovim/archive/refs/tags/v$NVIM_VERSION.tar.gz
@@ -17,6 +17,8 @@ case "$OSTYPE" in
 esac
 
 NVIM_ARGS=(
+    -DCMAKE_BUILD_TYPE=Release
+
     # install path
     -DCMAKE_INSTALL_PREFIX="$PREFIX"
 
@@ -25,13 +27,15 @@ NVIM_ARGS=(
     -DUSE_BUNDLED_LUAJIT=ON # prefer luajit over lua
     #-DUSE_BUNDLED_LUA=ON
 
+    # no multiple languages
     -DENABLE_LIBINTL=OFF
+    -DENABLE_LANGUAGES=OFF
 
     -DBUILD_STATIC_LIBS=ON
     -DBUILD_SHARED_LIBS=OFF
 
     # cache deps package
-    -DDEPS_DOWNLOAD_DIR="$UPKG_ROOT/packages"
+    -DDEPS_DOWNLOAD_DIR="$PWD/packages"
 
     # we have trouble to build static nvim
     #  => luajit crashes because of dlopen
@@ -43,7 +47,9 @@ NVIM_ARGS=(
     -DMACOSX_DEPLOYMENT_TARGET=10.13
 )
 
-if ! which cmake >/dev/null; then
+if which gcc && which cmake && which gettext; then
+    info "build tools is good"
+else
     info "prepare build tools"
     if which apk; then
         sudo apk update
@@ -58,15 +64,18 @@ if ! which cmake >/dev/null; then
 fi
 
 info "prepare sources"
-
-# prepare sources
-for url in "${NVIM_URLS[@]}"; do
-    curl -sL -o "$NVIM_TAR" "$url" && break
-done
-
+if ! test -f "$NVIM_TAR"; then
+    for url in "${NVIM_URLS[@]}"; do
+        info "download neovim < $url"
+        curl -sL --fail --connect-timeout 3 -o "$NVIM_TAR" "$url" && break || true
+    done
+fi
 [ -f "$NVIM_TAR" ] || exit 1
 
-tar -xvf "$NVIM_TAR" && cd neovim-*/
+NVIM_OUT="${PREFIX//prebuilts/out}"
+mkdir -pv "$NVIM_OUT" && cd "$NVIM_OUT"
+
+tar -xf "$NVIM_TAR" && cd neovim-*/
 
 # https://github.com/neovim/neovim/blob/master/BUILD.md
 
@@ -101,7 +110,7 @@ make install
 
 info "check nvim binary"
 
-if which -s otool; then
+if which otool >/dev/null; then
     otool -L "$PREFIX/bin/nvim"
 else
     ldd "$PREFIX/bin/nvim"
