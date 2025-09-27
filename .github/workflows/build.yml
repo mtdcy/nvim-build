@@ -23,8 +23,8 @@ jobs:
           # for aarch64
           - macos-arm64
         builder:
-          - ubuntu-latest
-          - alpine-latest
+          - ubuntu-22.04
+          - alpine-3
 
     steps:
       - name: Checkout

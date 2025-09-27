@@ -14,7 +14,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.runner }}
-    container: ghcr.io/mtdcy/baseimage:alpine-latest
+    container: ghcr.io/mtdcy/baseimage:alpine-3
     strategy:
       matrix:
         # https://github.com/actions/runner-images
