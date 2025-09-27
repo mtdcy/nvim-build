@@ -47,7 +47,7 @@ NVIM_ARGS=(
     -DMACOSX_DEPLOYMENT_TARGET=10.13
 )
 
-if which gcc && which cmake && which gettext; then
+if which gcc && which cmake && which msgfmt; then
     info "build tools is good"
 else
     info "prepare build tools"
