@@ -1,0 +1,4 @@
+neovim-*/
+prebuilts/
+neovim-*.tar.gz
+release

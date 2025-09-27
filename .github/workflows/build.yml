@@ -1,0 +1,35 @@
+---
+name: Build nvim
+
+on:
+  push:
+    paths:
+      - build.sh
+    branches:
+      - main
+
+  workflow_dispatch: null
+
+jobs:
+  build:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        runner:
+          - macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.READ_TOKEN }}
+          fetch-depth: 2
+
+      - name: Build
+        run: ./build.sh
+
+      - name: Release
+        uses: actions/gitea-release-action@v1
+        with:
+          files: |-
+            release/**
