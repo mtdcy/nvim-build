@@ -52,7 +52,7 @@ done
 
 [ -f "$NVIM_TAR" ] || exit 1
 
-tar -xvf "$NVIM_TAR" && cd neovim-*
+tar -xvf "$NVIM_TAR" && cd neovim-*/
 
 # https://github.com/neovim/neovim/blob/master/BUILD.md
 

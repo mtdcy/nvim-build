@@ -1,11 +1,11 @@
 ---
-name: Build nvim with container
+name: Build nvim with host
 
 on:
   push:
     paths:
       - build.sh
-      - .github/workflows/build.yml
+      - .github/workflows/build-host.yml
     branches:
       - main
 
@@ -14,15 +14,10 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.runner }}
-    container: ${{ vars.REGISTRY }}/${{ vars.REGISTRY_USER }}/builder:${{ matrix.builder }}
     strategy:
       matrix:
         runner:
           - macos-latest
-          - ubuntu-latest
-        builder:
-          - ubuntu-latest
-          - alpine-latest
 
     steps:
       - name: Checkout
