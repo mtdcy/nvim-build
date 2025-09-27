@@ -45,5 +45,6 @@ jobs:
         with:
           tag_name: ${{ steps.build.outputs.version }}
           name: ${{ steps.build.outputs.date }}
+          make_latest: true
           files: |-
             release/**
