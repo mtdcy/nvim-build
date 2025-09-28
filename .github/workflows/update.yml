@@ -1,20 +1,12 @@
 ---
-name: Update revision
+name: Update nvim
 
 on:
   schedule:
     - cron: '0 0 * * *'  # daily
 
-  push:
-    paths:
-      - .github/workflows/update.yml
-    branches:
-      - main
-
-  workflow_dispatch: null
-
 jobs:
-  build-with-docker:
+  update:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout (main)
