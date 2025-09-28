@@ -1,0 +1,51 @@
+---
+name: Update revision
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # daily
+
+  push:
+    paths:
+      - .github/workflows/update.yml
+    branches:
+      - main
+
+  workflow_dispatch: null
+
+jobs:
+  build-with-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout (main)
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.COMMIT_TOKEN }}
+
+      - name: Update (revision)
+        shell: bash
+        run: |-
+          pwd -P
+
+          git config --global user.name "bot"
+          git config --global user.email "bot@mtdcy.top"
+          git config --global --add safe.directory "$(pwd -P)"
+
+          IFS='=' read -r _ version <<< "$(grep NVIM_VERSION build.sh | head -n1)"
+          IFS='.' read -r m n r _ <<< "$version"
+
+          URL="https://github.com/neovim/neovim/archive/refs/tags/vNVIM_VERSION.tar.gz"
+
+          if curl --fail -vIL "${URL/NVIM_VERSION/$m.$n.$((r+1))}" -o /dev/null; then
+            version="$m.$n.$((r+1))"
+          elif curl --fail -vIL "${URL/NVIM_VERSION/$m.$((n+1)).0}" -o /dev/null; then
+            version="$m.$((n+1)).0"
+          else
+            exit 0
+          fi
+
+          sed -i "s/NVIM_VERSION=.*$/NVIM_VERSION=$version/" build.sh
+
+          git add .
+          git commit -m "update nvim => $version"
+          git push
