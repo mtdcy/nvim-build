@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DOCKER_IMAGE="${DOCKER_IMAGE:-lcr.io/mtdcy/builder:ubuntu-latest}"
+DOCKER_IMAGE="${DOCKER_IMAGE:-lcr.io/mtdcy/builder:alpine-3}"
 
 opts=(
     -w "$PWD"
