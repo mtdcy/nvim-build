@@ -9,7 +9,11 @@ on:
     branches:
       - main
 
-  workflow_dispatch: null
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: Which nvim version to build
 
 jobs:
   build:
@@ -37,6 +41,9 @@ jobs:
         id: build
         shell: bash
         run: |
+          version="${{ github.event.inputs.version }}"
+          [ -z "$version" ] || sed -i "s/NVIM_VERSION=.*$/NVIM_VERSION=$version/" build.sh
+
           ./build.sh
 
           IFS='=' read -r _ version <<< "$(grep NVIM_VERSION build.sh | head -n1)"
