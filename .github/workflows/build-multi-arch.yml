@@ -17,7 +17,7 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.runner }}
-    container: ${{ vars.REGISTRY }}/${{ vars.REGISTRY_USER }}/builder:${{ matrix.builder }}
+    container: lcr.mtdcy.top:8443/${{ vars.REGISTRY_USER }}/builder:${{ matrix.builder }}
     strategy:
       matrix:
         runner:
@@ -34,7 +34,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Build
         id: build
@@ -49,7 +49,7 @@ jobs:
           ./build.sh
 
       - name: Release
-        uses: actions/gitea-release-action@v1
+        uses: https://git.mtdcy.top:8443/actions/gitea-release-action@v1
         with:
           tag_name: ${{ steps.build.outputs.version }}
           name: nvim ${{ steps.build.outputs.version }}
