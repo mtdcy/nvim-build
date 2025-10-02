@@ -1,6 +1,6 @@
 #!/bin/bash -e
 
-NVIM_VERSION=0.11.2
+NVIM_VERSION=0.11.3
 NVIM_TAR="$PWD/neovim-$NVIM_VERSION.tar.gz"
 NVIM_URLS=(
     https://pub.mtdcy.top/packages/neovim-$NVIM_VERSION.tar.gz
