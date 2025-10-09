@@ -11,6 +11,7 @@ error() { echo -e "\n\\033[31m== $*\\033[39m"; }
 info()  { echo -e "\n\\033[32m== $*\\033[39m"; }
 warn()  { echo -e "\n\\033[33m== $*\\033[39m"; }
 
+NVIM_ROOT="$PWD"
 case "$OSTYPE" in
     darwin*) PREFIX="$PWD/prebuilts/$(uname -m)-apple-darwin" ;;
     *)       PREFIX="$PWD/prebuilts/$(uname -m)-$OSTYPE"      ;;
@@ -47,7 +48,7 @@ NVIM_ARGS=(
     -DMACOSX_DEPLOYMENT_TARGET=10.13
 )
 
-if which gcc && which cmake && which msgfmt; then
+if which gcc && which cmake && which msgfmt && which nim; then
     info "build tools is good"
 else
     info "prepare build tools"
@@ -56,7 +57,7 @@ else
         sudo apk add build-base cmake gettext
     elif which brew; then
         brew update
-        brew install cmake gettext
+        brew install cmake gettext nim
     else
         sudo apt update
         sudo apt install -y build-essential cmake gettext
@@ -136,8 +137,26 @@ chmod a+x "$PREFIX/nvim"
 
 info "make nvim-$NVIM_VERSION release"
 
-RELEASE="${PREFIX/prebuilts/release}.tar.gz"
+RELEASE="${PREFIX/prebuilts/release}.tar"
 
 mkdir -pv "$(dirname "$RELEASE")"
 
-tar -C "$PREFIX" -czf "$RELEASE" .
+tar -C "$PREFIX" -cf "$RELEASE" .
+
+# fruzzy official site has no prebuilt fruzzy_mod.so for Apple silicon
+if [[ "$(uname -a)" =~ Darwin.*arm64 ]]; then
+    info "prepare fruzzy native modules"
+
+    pushd "$NVIM_ROOT/fruzzy"
+
+    nimble refresh
+    nimble install -y nimpy binaryheap
+
+    make build
+
+    info "append fruzzy_mod.so to release"
+    tar -C rplugin/python3 -rf "$RELEASE" fruzzy_mod.so
+fi
+
+info "gzip releases"
+gzip -f "$RELEASE"
