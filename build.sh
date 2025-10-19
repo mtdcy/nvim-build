@@ -144,7 +144,7 @@ mkdir -pv "$(dirname "$RELEASE")"
 tar -C "$PREFIX" -cf "$RELEASE" .
 
 # fruzzy official site has no prebuilt fruzzy_mod.so for Apple silicon
-if [[ "$(uname -a)" =~ Darwin.*arm64 ]]; then
+if [ "$(uname -s)" = "Darwin" ]; then
     info "prepare fruzzy native modules"
 
     pushd "$NVIM_ROOT/fruzzy"
@@ -152,10 +152,15 @@ if [[ "$(uname -a)" =~ Darwin.*arm64 ]]; then
     nimble refresh
     nimble install -y nimpy binaryheap
 
-    make build
+    relopt="-d:release -d:removelogger --os:macosx"
+    [ "$(uname -m)" = "x86_64" ] && relopt+=" --cpu:amd64" || relopt+=" --cpu:arm64"
+
+    make build relopt="$relopt"
 
     info "append fruzzy_mod.so to release"
     tar -C rplugin/python3 -rf "$RELEASE" fruzzy_mod.so
+
+    popd
 fi
 
 info "gzip releases"
