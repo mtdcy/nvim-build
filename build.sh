@@ -48,7 +48,7 @@ NVIM_ARGS=(
     -DMACOSX_DEPLOYMENT_TARGET=10.13
 )
 
-if which gcc && which cmake && which msgfmt && which nim; then
+if which gcc && which cmake && which msgfmt; then
     info "build tools is good"
 else
     info "prepare build tools"
@@ -142,26 +142,6 @@ RELEASE="${PREFIX/prebuilts/release}.tar"
 mkdir -pv "$(dirname "$RELEASE")"
 
 tar -C "$PREFIX" -cf "$RELEASE" .
-
-# fruzzy official site has no prebuilt fruzzy_mod.so for Apple silicon
-if [ "$(uname -s)" = "Darwin" ]; then
-    info "prepare fruzzy native modules"
-
-    pushd "$NVIM_ROOT/fruzzy"
-
-    nimble refresh
-    nimble install -y nimpy binaryheap
-
-    relopt="-d:release -d:removelogger --os:macosx"
-    [ "$(uname -m)" = "x86_64" ] && relopt+=" --cpu:amd64" || relopt+=" --cpu:arm64"
-
-    make build relopt="$relopt"
-
-    info "append fruzzy_mod.so to release"
-    tar -C rplugin/python3 -rf "$RELEASE" fruzzy_mod.so
-
-    popd
-fi
 
 info "gzip releases"
 gzip -f "$RELEASE"
