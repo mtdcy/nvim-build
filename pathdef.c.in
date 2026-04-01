@@ -1,0 +1,7 @@
+// nvim runtime paths patch:
+//  $VIMROOT => $VIM => $VIMRUNTIME
+
+#include "${PROJECT_SOURCE_DIR}/src/nvim/vim.h"
+char *default_vim_dir = "$VIMROOT/share/nvim";                  /* $VIM         */
+char *default_vimruntime_dir = "$VIMROOT/share/nvim/runtime";   /* $VIMRUNTIME  */
+char *default_lib_dir = "$VIMROOT/lib/nvim";                    /* runtime ABI  */

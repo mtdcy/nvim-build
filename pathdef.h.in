@@ -1,0 +1,5 @@
+// nvim buildtime paths patch:
+
+char *default_vim_dir = "";
+char *default_vimruntime_dir = "";
+char *default_lib_dir = "";
