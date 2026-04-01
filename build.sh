@@ -7,6 +7,8 @@ NVIM_URLS=(
     https://github.com/neovim/neovim/archive/refs/tags/v$NVIM_VERSION.tar.gz
 )
 
+export MACOSX_DEPLOYMENT_TARGET=12.0
+
 error() { echo -e "\n\\033[31m== $*\\033[39m"; }
 info()  { echo -e "\n\\033[32m== $*\\033[39m"; }
 warn()  { echo -e "\n\\033[33m== $*\\033[39m"; }
@@ -74,48 +76,122 @@ fi
 [ -f "$NVIM_TAR" ] || exit 1
 
 NVIM_OUT="${PREFIX//prebuilts/out}"
-mkdir -pv "$NVIM_OUT" && cd "$NVIM_OUT"
+mkdir -pv "$NVIM_OUT"
 
-tar -xf "$NVIM_TAR" && cd neovim-*/
+( 
+    info "prepare nvim"
 
-# https://github.com/neovim/neovim/blob/master/BUILD.md
+    cd "$NVIM_OUT"
 
-mkdir -p build .deps
+    tar -xf "$NVIM_TAR"
 
-info "patch nvim"
+    cd neovim-*/
 
-# $VIMROOT => $VIM => $VIMRUNTIME
-cat << 'EOF' > cmake.config/pathdef.c.in
-#include "${PROJECT_SOURCE_DIR}/src/nvim/vim.h"
-char *default_vim_dir = "$VIMROOT/share/nvim";                  /* $VIM         */
-char *default_vimruntime_dir = "$VIMROOT/share/nvim/runtime";   /* $VIMRUNTIME  */
-char *default_lib_dir = "$VIMROOT/lib/nvim";                    /* runtime ABI  */
+    # https://github.com/neovim/neovim/blob/master/BUILD.md
+
+    mkdir -p build .deps
+
+    info "patch nvim"
+
+    # $VIMROOT => $VIM => $VIMRUNTIME
+    cat << 'EOF' > cmake.config/pathdef.c.in
+    #include "${PROJECT_SOURCE_DIR}/src/nvim/vim.h"
+    char *default_vim_dir = "$VIMROOT/share/nvim";                  /* $VIM         */
+    char *default_vimruntime_dir = "$VIMROOT/share/nvim/runtime";   /* $VIMRUNTIME  */
+    char *default_lib_dir = "$VIMROOT/lib/nvim";                    /* runtime ABI  */
 EOF
 # quote 'EOF' to avoid variable expanding.
 
-(
     info "build dependencies"
-    cd .deps
-    cmake ../cmake.deps && make
+    pushd .deps 
+
+    cmake ../cmake.deps 
+
+    make
     # installed locally by custom command
+
+    popd
+
+    info "build nvim"
+
+    pushd build
+
+    cmake "${NVIM_ARGS[@]}" .. && make
+
+    # install
+    make install
+
+    info "check nvim binary"
+
+    if which otool >/dev/null; then
+        otool -L "$PREFIX/bin/nvim"
+    else
+        ldd "$PREFIX/bin/nvim"
+    fi
+
+    popd
 )
 
-info "build nvim"
+# builtin tree-sitter parsers: c lua vim vimdoc query markdown markdown_inline
+treesitters=(
+    # tree-sitter-grammars
+    https://github.com/tree-sitter-grammars/tree-sitter-yaml/archive/refs/tags/v0.7.2.tar.gz
+    https://github.com/tree-sitter-grammars/tree-sitter-toml/archive/refs/tags/v0.7.0.tar.gz
+    https://github.com/tree-sitter-grammars/tree-sitter-make/archive/refs/tags/v1.1.1.tar.gz
 
-cd build
+    # tree-sitter
+    https://github.com/tree-sitter/tree-sitter-regex/archive/refs/tags/v0.25.0.tar.gz
+    https://github.com/tree-sitter/tree-sitter-json/archive/refs/tags/v0.24.8.tar.gz
+    https://github.com/tree-sitter/tree-sitter-html/archive/refs/tags/v0.23.2.tar.gz
+    https://github.com/tree-sitter/tree-sitter-css/archive/refs/tags/v0.25.0.tar.gz
 
-cmake "${NVIM_ARGS[@]}" .. && make
+    https://github.com/tree-sitter/tree-sitter-bash/archive/refs/tags/v0.25.1.tar.gz
+    https://github.com/tree-sitter/tree-sitter-cpp/archive/refs/tags/v0.23.4.tar.gz
+    https://github.com/tree-sitter/tree-sitter-go/archive/refs/tags/v0.25.0.tar.gz
+    https://github.com/tree-sitter/tree-sitter-rust/archive/refs/tags/v0.24.2.tar.gz
+    https://github.com/tree-sitter/tree-sitter-python/archive/refs/tags/v0.25.0.tar.gz
+    https://github.com/tree-sitter/tree-sitter-ruby/archive/refs/tags/v0.23.1.tar.gz
+    https://github.com/tree-sitter/tree-sitter-javascript/archive/refs/tags/v0.25.0.tar.gz
+    https://github.com/tree-sitter/tree-sitter-typescript/archive/refs/tags/v0.23.2.tar.gz
+)
 
-# install
-make install
+for url in "${treesitters[@]}"; do
+    (
+        IFS='/' read -r _ _ _ _ name _ <<< "$url"
 
-info "check nvim binary"
+        info "build $name"
 
-if which otool >/dev/null; then
-    otool -L "$PREFIX/bin/nvim"
-else
-    ldd "$PREFIX/bin/nvim"
-fi
+        pushd "$NVIM_OUT"
+
+        curl -sL "$url" | tar -xz
+
+        cd "$(ls | grep "$name" | tail -n1)"
+
+        lang="${name##*-}"
+
+        if test -f CMakeLists.txt; then
+            cmake -S . -B build
+            cmake --build build
+
+            if which otool >/dev/null; then
+                # darwin format
+                find build -type f \( -name "*$name*.dylib" -o -name "*$name*.so" \) -exec cp -fv {} "$lang.so" \;
+                install_name_tool -id "@rpath/$lang.so" "$lang.so"
+            else
+                # linux format
+                find build -type f -name "*$name.so.*" -exec cp -fv {} "$lang.so" \;
+            fi
+        else
+            "${CC:-gcc}" -v -shared -fPIC -o "$lang.so" $(find src -name "*.c" | xargs)
+        fi
+
+        cp -fv "$lang.so" "$PREFIX/lib/nvim/parser/"
+
+        # install queries
+        mkdir -pv "$PREFIX/share/nvim/runtime/queries/$lang" 
+        find . -type f -name "*.scm" -exec cp -fv {} "$PREFIX/share/nvim/runtime/queries/$lang" \;
+    )
+done
 
 info "prepare app entry"
 
@@ -134,6 +210,8 @@ EOF
 chmod a+x "$PREFIX/nvim"
 
 "$PREFIX/nvim" -V1 -v
+
+"$PREFIX/nvim" --headless -c "checkhealth | w! $PREFIX/checkhealth.txt" +quit
 
 info "make nvim-$NVIM_VERSION release"
 

@@ -1,4 +1,5 @@
 neovim-*/
 prebuilts/
+out/
 neovim-*.tar.gz
 release
