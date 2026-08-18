@@ -23,6 +23,7 @@ jobs:
         include:
           # for *-apple-darwin
           - runner: macos-latest
+          - runner: macos-intel
           # for x86_64-linux-gnu
           - runner: ubuntu-latest
             builder: lcr.io/mtdcy/builder:ubuntu-22.04
