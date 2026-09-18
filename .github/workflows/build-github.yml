@@ -27,24 +27,24 @@ jobs:
           # https://github.com/actions/runner-images
           # https://github.com/actions/partner-runner-images
           # for arm64-apple-darwin
-          - machine: macos-14
+          - machine: macos-15
           # for x86_64-apple-darwin
-          - machine: macos-13
+          - machine: macos-15-intel
           # for x86_64-linux-gnu
           - machine: ubuntu-22.04
+            builder: ghcr.io/mtdcy/builder:ubuntu-22.04
+          # for aarch64-linux-gnu
+          - machine: ubuntu-22.04-arm
             builder: ghcr.io/mtdcy/builder:ubuntu-22.04
           # for x86_64-linux-musl
           - machine: ubuntu-22.04
             builder: ghcr.io/mtdcy/builder:alpine-3
-          # for aarch64-linux-gnu
-          - machine: ubuntu-22.04-arm
-            builder: ghcr.io/mtdcy/builder:ubuntu-22.04
           # no aarch64-linux-musl, as
           # JavaScript Actions in Alpine containers are only supported on x64 Linux runners. Detected Linux Arm64
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
@@ -61,7 +61,7 @@ jobs:
           ./build.sh
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
           tag_name: ${{ steps.build.outputs.version }}
