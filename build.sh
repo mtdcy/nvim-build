@@ -9,9 +9,9 @@ NVIM_URLS=(
 
 export MACOSX_DEPLOYMENT_TARGET=12.0
 
-error() { echo -e "\n\\033[31m== $*\\033[39m"; }
-info()  { echo -e "\n\\033[32m== $*\\033[39m"; }
-warn()  { echo -e "\n\\033[33m== $*\\033[39m"; }
+error() { echo -e "❌ \n\\033[31m== $*\\033[39m"; }
+info()  { echo -e "✨ \n\\033[32m== $*\\033[39m"; }
+warn()  { echo -e "⚠️ \n\\033[33m== $*\\033[39m"; }
 
 NVIM_ROOT="$PWD"
 case "$OSTYPE" in
@@ -78,7 +78,7 @@ fi
 NVIM_OUT="${PREFIX//prebuilts/out}"
 mkdir -pv "$NVIM_OUT"
 
-( 
+(   
     info "prepare nvim"
 
     cd "$NVIM_OUT"
@@ -100,12 +100,12 @@ mkdir -pv "$NVIM_OUT"
     char *default_vimruntime_dir = "$VIMROOT/share/nvim/runtime";   /* $VIMRUNTIME  */
     char *default_lib_dir = "$VIMROOT/lib/nvim";                    /* runtime ABI  */
 EOF
-# quote 'EOF' to avoid variable expanding.
+    # quote 'EOF' to avoid variable expanding.
 
     info "build dependencies"
-    pushd .deps 
+    pushd .deps
 
-    cmake ../cmake.deps 
+    cmake ../cmake.deps
 
     make
     # installed locally by custom command
@@ -123,7 +123,7 @@ EOF
 
     info "check nvim binary"
 
-    if which otool >/dev/null; then
+    if which otool > /dev/null; then
         otool -L "$PREFIX/bin/nvim"
     else
         ldd "$PREFIX/bin/nvim"
@@ -156,7 +156,7 @@ treesitters=(
 )
 
 for url in "${treesitters[@]}"; do
-    (
+    (   
         IFS='/' read -r _ _ _ _ name _ <<< "$url"
 
         info "build $name"
@@ -173,7 +173,7 @@ for url in "${treesitters[@]}"; do
             cmake -S . -B build
             cmake --build build
 
-            if which otool >/dev/null; then
+            if which otool > /dev/null; then
                 # darwin format
                 find build -type f \( -name "*$name*.dylib" -o -name "*$name*.so" \) -exec cp -fv {} "$lang.so" \;
                 install_name_tool -id "@rpath/$lang.so" "$lang.so"
@@ -188,7 +188,7 @@ for url in "${treesitters[@]}"; do
         cp -fv "$lang.so" "$PREFIX/lib/nvim/parser/"
 
         # install queries
-        mkdir -pv "$PREFIX/share/nvim/runtime/queries/$lang" 
+        mkdir -pv "$PREFIX/share/nvim/runtime/queries/$lang"
         find . -type f -name "*.scm" -exec cp -fv {} "$PREFIX/share/nvim/runtime/queries/$lang" \;
     )
 done
